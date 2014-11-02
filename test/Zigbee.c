@@ -46,11 +46,12 @@ int main(int argc, char **argv)
 	//---- Serial Port ----
 	serialFd = serial_init(serialport, baudrate);
     if(serialFd==-1) {fprintf(stderr,"invalid serialport %s\n",argv[2]); exit(1); }
-	//---- Send Message ----
+	//---- Send Welcome Message ----
     printf("Test Program. Conected to Serial:%s\n",argv[1]);
     printf("Test the library sending one of the following frames:\n");
     printf("*ATID: 7E00040801494469\n");
     printf("*ATResponse: 7E00058801424400F0\n");
+    printf("*Zigbee Transmit Status: 7E00078B017D8400000171\n");
 
 	/************************
 	 * Infinite Loop:
@@ -86,6 +87,7 @@ int main(int argc, char **argv)
 #endif
 			//---- Decode API frame received
 			api = API_frame_decode(buf,n);
+			//---- Test specific's frames functions
 			test(api);
 			//--- Free memory
 			free(api->data->cmdData);
@@ -132,11 +134,22 @@ test(api_frame * api){
 	printf("\n****************\n");
 	//---- Switch CMD ID ----
 	switch(api->data->cmdID){
-
-	//....AT Command Response
+	//.... AT Command Response
 	case ATRESPONSE:test_AT_response(api);
 		break;
-
+	//....Zigbee Transmit Status
+	case ZBTR_STATUS:test_ZBTR_status(api);
+		break;
+	//.... Zigbee Receive Packet
+	case ZBRECVPCK:test_ZBRCV_packet(api);
+		break;
+	//.... Node ID
+	case NODEID:test_NODE_id(api);
+		break;
+	//.... Remote AT Command Response
+	case RATRESPONSE:test_RAT_response(api);
+		break;
+	//.... Anything not implemented yet
 	default:printf("Default. Not Implemented Yet");
 		break;
 	}
@@ -194,6 +207,61 @@ test_AT_response(api_frame * api){
 
 	return;
 }
+
+void
+test_ZBTR_status(api_frame * api){
+	//---- Welcome Message
+	printf("Zigbee Transmit Status\n");
+	//---- Declare 16 bit Address
+	unsigned char address[2];
+	get_ZBTR_status_address(api->data, address);
+	printf("* 16-bit Address:%02x%02x\n",address[0],address[1]);
+	//---- Number of transmission retries
+	unsigned char retrycount=\
+	get_ZBTR_status_retrycount(api->data);
+	printf("* Transmit retry count: %d\n",retrycount);
+	//---- Delivery Status
+	printf("* Delivery Status: ");
+	switch\
+	(get_ZBTR_status_deliveryST(api->data)){
+		case SUCCESS: printf("Success\n");
+			break;
+		default: printf("Delivery Error\n");
+			break;
+	}
+	//---- Discovery Status
+	printf("* Discovery Status");
+	switch\
+	(get_ZBTR_status_discoveryST(api->data)){
+		case NO_OHEAD:printf("No Discovery Overhead\n");
+			break;
+		case ADDR_DISC:printf("Address Discovery\n");
+			break;
+		case ROUTE_DISC:printf("Route Discovery\n");
+			break;
+		case ADDR_ROUTE:printf("Address and Route\n");
+			break;
+		case TIMEOUT:printf("Extended Timeout Discovery\n");
+			break;
+	}
+	return;
+}
+void
+test_ZBRCV_packet(api_frame * api){
+	printf("Sorry: Work in Progress\n");
+	return;
+}
+void
+test_NODE_id(api_frame * api){
+	printf("Sorry: Work in Progress\n");
+	return;
+}
+void
+test_RAT_response(api_frame * api){
+	printf("Sorry: Work in Progress\n");
+	return;
+}
+
 //void *
 //send_serial(void* arg)
 //{

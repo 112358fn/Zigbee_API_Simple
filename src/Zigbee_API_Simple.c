@@ -67,6 +67,16 @@ API_frame_decode(unsigned char * buf,int n)
  *	AT Command Response Functions	*
  *									*
  ************************************/
+/*
+ * Frame Type: 0x88
+ * In response to an AT Command message, the module will
+ * send an AT Command Response message. Some commands will
+ * send back multiple frames (for example, the ND (Node
+ * Discover) command).
+ *
+ */
+//NOT USE
+//data->cmdData[0] is Frame ID
 void
 get_AT_response_name(data_frame * data, unsigned char* name){
 	name[0]=data->cmdData[1];
@@ -86,6 +96,43 @@ size_t
 get_AT_response_data_length(unsigned int length){
 	return (size_t)length-5;
 }
+
+/****************************************
+ *	ZigBee Transmit Status Functions	*
+ *										*
+ ****************************************/
+/*
+ * Frame Type: 0x8B
+ * When a TX Request is completed, the module sends a TX
+ * Status message. This message will indicate if the packet
+ * was transmitted successfully or if there was a failure.
+ *
+ */
+//NOT USE
+//data->cmdData[0] is Frame ID
+void
+get_ZBTR_status_address(data_frame * data, unsigned char* address){
+	address[0]=data->cmdData[1];
+	address[1]=data->cmdData[2];
+	return;
+}
+unsigned char
+get_ZBTR_status_retrycount(data_frame * data){
+	return data->cmdData[3];
+}
+unsigned char
+get_ZBTR_status_deliveryST(data_frame * data){
+	return data->cmdData[4];
+}
+unsigned char
+get_ZBTR_status_discoveryST(data_frame * data){
+	return data->cmdData[5];
+}
+
+
+
+
+
 //void otra(int nose){
 //	switch(packet[3]){
 //		case NODEID:
