@@ -100,16 +100,9 @@ int main(int argc, char **argv)
 			//---- Read standard input
 			int n=read(0, buffer, 0x100);
 			//---- Scan buffer: Turn ASCII to HEX
-			char ascii[3]; ascii[2]='\0';
-			unsigned int hex;
-			for(unsigned int i=0; i< n-1; i+=2){
-				ascii[0]=buffer[i];
-				ascii[1]=buffer[i+1];
-				sscanf(ascii,"%02x",&hex);
-				buffer[i/2]=(((unsigned char)hex) & 0xff);
-			}
+			ascii_to_hex(buffer, n);
 			//---- Send HEX
-			if((n/2) != write(serialFd,buffer,n/2))
+			if((n) != write(serialFd,buffer,n))
 				printf("Fail to send APIframe to serial\n");
 			//---- Free Memory
 			free(buffer);
@@ -169,6 +162,20 @@ test(api_frame * api){
 	default:printf("Default. Not Implemented Yet");
 		break;
 	}
+	return;
+}
+
+void
+ascii_to_hex(unsigned char *buffer, int n){
+	char ascii[3]; ascii[2]='\0';
+	unsigned int hex;
+	for(unsigned int i=0; i< n-1; i+=2){
+		ascii[0]=buffer[i];
+		ascii[1]=buffer[i+1];
+		sscanf(ascii,"%02x",&hex);
+		buffer[i/2]=(((unsigned char)hex) & 0xff);
+	}
+	n=n/2;
 	return;
 }
 //void *

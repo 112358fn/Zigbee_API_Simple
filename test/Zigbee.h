@@ -14,5 +14,7 @@
 //---- Functions
 void
 test(api_frame * apiData);
+void
+ascii_to_hex(unsigned char *buffer, int n);
 
 #endif
