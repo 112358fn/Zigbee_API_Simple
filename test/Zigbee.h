@@ -16,5 +16,7 @@ void
 test(api_frame * apiData);
 void
 ascii_to_hex(unsigned char *buffer, int n);
+void
+test_AT_response(api_frame * api);
 
 #endif

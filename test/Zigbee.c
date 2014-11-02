@@ -117,6 +117,7 @@ int main(int argc, char **argv)
 
 void
 test(api_frame * api){
+
 	//Test API Frame
 	printf("\n****************\n");
 	printf("* API Frame *");
@@ -124,43 +125,18 @@ test(api_frame * api){
 	printf("Start:%02x\n",api->start_delimiter);
 	printf("Lenght:%02x\n",api->data->length);
 	printf("CheckSum:%02x\n",api->checksum);
+
 	//Test Data Frame:
-	//----CMD ID
 	printf("\n****************\n");
 	printf("* Data Frame *");
 	printf("\n****************\n");
+	//---- Switch CMD ID ----
 	switch(api->data->cmdID){
+
 	//....AT Command Response
-	case ATRESPONSE:
-	{
-		printf("AT Command Response\n");
-		char name[2];
-		get_AT_response_name( api->data, name);
-		printf("* AT command name:%c%c\n",name[0],name[1]);
-		printf("* Command Staus: ");
-		switch(get_AT_response_status( api->data))
-		{
-			case ATOK:printf("OK\n");
-				break;
-			case ATERROR:printf("Error\n");
-				break;
-			case ATINVCMD:printf("invalid Command\n");
-				break;
-			case ATINVPAR:printf("invalid Parameters\n");
-				break;
-			case ATTXFAIL:printf("Tx Failure\n");
-				break;
-			default: printf("Unknown\n");
-				break;
-		}
-		size_t length_AT=\
-				get_AT_response_data_length(api->data->length);
-		unsigned char *cmdData=(unsigned char*)malloc(length_AT);
-		get_AT_response_data( api->data, cmdData);
-		for(int i=0; i<length_AT; i++)printf("%02x",cmdData[i]);
-		printf("\n");
+	case ATRESPONSE:test_AT_response(api);
 		break;
-	}
+
 	default:printf("Default. Not Implemented Yet");
 		break;
 	}
@@ -178,6 +154,44 @@ ascii_to_hex(unsigned char *buffer, int n){
 		buffer[i/2]=(((unsigned char)hex) & 0xff);
 	}
 	n=n/2;
+	return;
+}
+
+void
+test_AT_response(api_frame * api){
+	//----Print Welcome Message
+	printf("AT Command Response\n");
+	//----Declare AT command name
+	char name[2];
+	get_AT_response_name( api->data, name);
+	printf("* AT command name:%c%c\n",name[0],name[1]);
+	//---- Switch AT command Status
+	printf("* Command Staus: ");
+	switch(get_AT_response_status( api->data))
+	{
+		case ATOK:printf("OK\n");
+			break;
+		case ATERROR:printf("Error\n");
+			break;
+		case ATINVCMD:printf("invalid Command\n");
+			break;
+		case ATINVPAR:printf("invalid Parameters\n");
+			break;
+		case ATTXFAIL:printf("Tx Failure\n");
+			break;
+		default: printf("Unknown\n");
+			break;
+	}
+	//---- Recover length of AT parameters
+	size_t length_AT=\
+			get_AT_response_data_length(api->data->length);
+	//---- Show AT parameters if exist
+	if(length_AT==0) return;
+	unsigned char *cmdData=(unsigned char*)malloc(length_AT);
+	get_AT_response_data( api->data, cmdData);
+	for(int i=0; i<length_AT; i++)printf("%02x",cmdData[i]);
+	printf("\n");
+
 	return;
 }
 //void *
