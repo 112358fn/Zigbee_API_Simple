@@ -61,6 +61,16 @@
 #define ROUTE_DISC		0x02 // Route Discovery
 #define ADDR_ROUTE		0x03 // Address and Route
 #define	TIMEOUT			0x40 // Extended Timeout Discovery
+//---- ZigBee Receive Packet. Options
+/*
+ * Note: Option values can be combined. For example, a
+ * 0x40 and a 0x01 will show as a 0x41. Other possible
+ * values 0x21, 0x22, 0x41, 0x42, 0x60, 0x61, 0x62.
+ */
+#define PKT_ACK			0x01 // Packet Acknowledged
+#define PKT_BRD			0x02 // Packet was a broadcast packet
+#define	PKT_ENCR		0x20 // Packet encrypted with APS encryption
+#define	FRM_ENDD		0x40 // Packet was sent from an end device (if known)
 
 
 /********************************
@@ -97,14 +107,15 @@ void
 get_AT_response_name(data_frame * data, unsigned char* name);
 unsigned char
 get_AT_response_status(data_frame * data);
-void
-get_AT_response_data(data_frame * data, unsigned char* cmdData);
 size_t
 get_AT_response_data_length(unsigned int length);
+unsigned char *
+get_AT_response_data(data_frame * data);
+
 
 //---- ZigBee Transmit Status
 void
-get_ZBTR_status_address(data_frame * data, unsigned char* address);
+get_ZBTR_status_address16(data_frame * data, unsigned char* address);
 unsigned char
 get_ZBTR_status_retrycount(data_frame * data);
 unsigned char
@@ -112,4 +123,16 @@ get_ZBTR_status_deliveryST(data_frame * data);
 unsigned char
 get_ZBTR_status_discoveryST(data_frame * data);
 
+
+//---- ZigBee Receive Packet
+void
+get_ZBRCV_packet_address64(data_frame * data, unsigned char* address);
+void
+get_ZBRCV_packet_address16(data_frame * data, unsigned char* address);
+unsigned char
+get_ZBRCV_packet_options(data_frame * data);
+size_t
+get_ZBRCV_packet_data_length(unsigned int length);
+unsigned char *
+get_ZBRCV_packet_data(data_frame * data);
 #endif

@@ -49,10 +49,10 @@ API_frame_decode(unsigned char * buf,int n)
 	api->data->cmdID=packet[3];
 	//.... Data Space (Allocate Memory)....
 	unsigned char *cmdData = NULL;
-	if((cmdData = (unsigned char*) malloc(sizeof(api->data->length-1)))== NULL)
+	if((cmdData = (unsigned char*) malloc(sizeof(api->data->length)))== NULL)
 			exit(-1);
 	api->data->cmdData=cmdData;
-	for(int i=0; i < api->data->length-1; i++)
+	for(int i=0; i < api->data->length; i++)
 		api->data->cmdData[i]=packet[4+i];
 	//.... Checksum ....
 	api->checksum=packet[api->data->length + 3];
@@ -87,15 +87,19 @@ unsigned char
 get_AT_response_status(data_frame * data){
 	return data->cmdData[3];
 }
-void
-get_AT_response_data(data_frame * data, unsigned char* cmdData){
-	for(int i=0; i<data->length-5; i++)cmdData[i]=data->cmdData[4+i];
-	return;
-}
 size_t
 get_AT_response_data_length(unsigned int length){
 	return (size_t)length-5;
 }
+unsigned char *
+get_AT_response_data(data_frame * data){
+	size_t length = get_AT_response_data_length(data->length);
+	unsigned char* cmdData=NULL;
+	if((cmdData = (unsigned char*)malloc(length))==NULL) return 0;
+	for(int i=0; i<data->length-5; i++)cmdData[i]=data->cmdData[4+i];
+	return cmdData;
+}
+
 
 /****************************************
  *	ZigBee Transmit Status Functions	*
@@ -111,7 +115,7 @@ get_AT_response_data_length(unsigned int length){
 //NOT USE
 //data->cmdData[0] is Frame ID
 void
-get_ZBTR_status_address(data_frame * data, unsigned char* address){
+get_ZBTR_status_address16(data_frame * data, unsigned char* address){
 	address[0]=data->cmdData[1];
 	address[1]=data->cmdData[2];
 	return;
@@ -129,8 +133,44 @@ get_ZBTR_status_discoveryST(data_frame * data){
 	return data->cmdData[5];
 }
 
-
-
+/****************************************
+ *	ZigBee Receive Packet Functions		*
+ *										*
+ ****************************************/
+/*
+ * Frame Type: (0x90)
+ * When the module receives an RF packet, it is sent out
+ * the UART using this message type.
+ *
+ */
+void
+get_ZBRCV_packet_address64(data_frame * data, unsigned char* address){
+	for(int i=0; i<8; i++)
+		address[i]=data->cmdData[i];
+	return;
+}
+void
+get_ZBRCV_packet_address16(data_frame * data, unsigned char* address){
+	address[0]=data->cmdData[8];
+	address[1]=data->cmdData[9];
+	return;
+}
+unsigned char
+get_ZBRCV_packet_options(data_frame * data){
+	return data->cmdData[10];
+}
+size_t
+get_ZBRCV_packet_data_length(unsigned int length){
+	return length-11;//=FrameLength-FrameType-64Addr-16Addr-Options
+}
+unsigned char *
+get_ZBRCV_packet_data(data_frame * data){
+	size_t length = get_ZBRCV_packet_data_length(data->length);
+	unsigned char* receiveData=NULL;
+	if((receiveData = (unsigned char*)malloc(length))==NULL) return 0;
+	for(int i=0; i<length; i++) receiveData[i]=data->cmdData[11+i];
+return receiveData;
+}
 
 
 //void otra(int nose){

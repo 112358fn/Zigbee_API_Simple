@@ -14,7 +14,7 @@
 
 
 /************************************************************
- * Main
+ * Main														*
  * Function: Send and Get messages with API Frame format	*
  ************************************************************/
 int main(int argc, char **argv)
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     int baudrate = B9600;
     
     /********************
-     * Inicializations	*
+     * Init Variables	*
      ********************/
 	//---Check command line arguments
 	if(argc<3)
@@ -52,6 +52,7 @@ int main(int argc, char **argv)
     printf("*ATID: 7E00040801494469\n");
     printf("*ATResponse: 7E00058801424400F0\n");
     printf("*Zigbee Transmit Status: 7E00078B017D8400000171\n");
+    printf("*Zigbee Receive Packet: 7E0011900013A20040522BAA7D84015278446174610D\n");
 
 	/************************
 	 * Infinite Loop:
@@ -60,14 +61,13 @@ int main(int argc, char **argv)
 	fd_set rfds;
 	for(;;)
 	{	  
-		//---- wait for incoming informations ----
+		//---- wait for incoming informations from: ----
 		FD_ZERO(&rfds);
 		//---- standard input ----
 		FD_SET(0,&rfds);
 		//---- serial input ----
 		FD_SET(serialFd,&rfds);
 		int max_fd = (0 > serialFd ? 0 : serialFd) + 1;
-		
 		//---- Do the select ----
 		if(select(max_fd, &rfds, NULL, NULL, NULL)==-1)
 		{perror("select");exit(1);}
@@ -80,11 +80,6 @@ int main(int argc, char **argv)
 			//---- Read serial
 			int n=read(serialFd, buf, HEADER+FRAMEDATA+CHECKSUM);
 			if(n<0){continue;}//Nothing read
-#if DEBUG
-			//---- Print the receive packet
-			for(int i=0;i<n;i++)printf("%02x:",(unsigned int)buf[i]);
-			printf("\n");
-#endif
 			//---- Decode API frame received
 			api = API_frame_decode(buf,n);
 			//---- Test specific's frames functions
@@ -103,8 +98,9 @@ int main(int argc, char **argv)
 			unsigned char *buffer=(unsigned char*)malloc(0x100);
 			//---- Read standard input
 			int n=read(0, buffer, 0x100);
-			//---- Scan buffer: Turn ASCII to HEX
+			//---- Turn ASCII to HEX
 			ascii_to_hex(buffer, n);
+			n=n/2;
 			//---- Send HEX
 			if((n) != write(serialFd,buffer,n))
 				printf("Fail to send APIframe to serial\n");
@@ -117,12 +113,25 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+
+void
+ascii_to_hex(unsigned char *buffer, int n){
+	char ascii[3]; ascii[2]='\0';
+	unsigned int hex;
+	for(unsigned int i=0; i< n-1; i+=2){
+		ascii[0]=buffer[i];
+		ascii[1]=buffer[i+1];
+		sscanf(ascii,"%02x",&hex);
+		buffer[i/2]=(((unsigned char)hex) & 0xff);
+	}
+	return;
+}
 void
 test(api_frame * api){
 
 	//Test API Frame
 	printf("\n****************\n");
-	printf("* API Frame *");
+	printf("* API Frame    *");
 	printf("\n****************\n");
 	printf("Start:%02x\n",api->start_delimiter);
 	printf("Lenght:%02x\n",api->data->length);
@@ -130,7 +139,7 @@ test(api_frame * api){
 
 	//Test Data Frame:
 	printf("\n****************\n");
-	printf("* Data Frame *");
+	printf("* Data Frame   *");
 	printf("\n****************\n");
 	//---- Switch CMD ID ----
 	switch(api->data->cmdID){
@@ -155,21 +164,6 @@ test(api_frame * api){
 	}
 	return;
 }
-
-void
-ascii_to_hex(unsigned char *buffer, int n){
-	char ascii[3]; ascii[2]='\0';
-	unsigned int hex;
-	for(unsigned int i=0; i< n-1; i+=2){
-		ascii[0]=buffer[i];
-		ascii[1]=buffer[i+1];
-		sscanf(ascii,"%02x",&hex);
-		buffer[i/2]=(((unsigned char)hex) & 0xff);
-	}
-	n=n/2;
-	return;
-}
-
 void
 test_AT_response(api_frame * api){
 	//----Print Welcome Message
@@ -195,26 +189,28 @@ test_AT_response(api_frame * api){
 		default: printf("Unknown\n");
 			break;
 	}
-	//---- Recover length of AT parameters
+	//---- AT parameters
+	printf("* AT Parameters: ");
+	//.... Recover length
 	size_t length_AT=\
 			get_AT_response_data_length(api->data->length);
-	//---- Show AT parameters if exist
-	if(length_AT==0) return;
-	unsigned char *cmdData=(unsigned char*)malloc(length_AT);
-	get_AT_response_data( api->data, cmdData);
+	//.... Show AT parameters if exist
+	if(length_AT==0) {printf("None\n");return;}
+	unsigned char *cmdData=\
+			get_AT_response_data( api->data);
 	for(int i=0; i<length_AT; i++)printf("%02x",cmdData[i]);
 	printf("\n");
-
+	//.... Free memory
+	free(cmdData);
 	return;
 }
-
 void
 test_ZBTR_status(api_frame * api){
 	//---- Welcome Message
 	printf("Zigbee Transmit Status\n");
 	//---- Declare 16 bit Address
 	unsigned char address[2];
-	get_ZBTR_status_address(api->data, address);
+	get_ZBTR_status_address16(api->data, address);
 	printf("* 16-bit Address:%02x%02x\n",address[0],address[1]);
 	//---- Number of transmission retries
 	unsigned char retrycount=\
@@ -230,7 +226,7 @@ test_ZBTR_status(api_frame * api){
 			break;
 	}
 	//---- Discovery Status
-	printf("* Discovery Status");
+	printf("* Discovery Status: ");
 	switch\
 	(get_ZBTR_status_discoveryST(api->data)){
 		case NO_OHEAD:printf("No Discovery Overhead\n");
@@ -248,7 +244,54 @@ test_ZBTR_status(api_frame * api){
 }
 void
 test_ZBRCV_packet(api_frame * api){
-	printf("Sorry: Work in Progress\n");
+	//---- Welcome Message
+	printf("ZigBee Receive Packet\n");
+	//----64-bit Source Address
+	printf("* 64-bit Address: ");
+	unsigned char address64[8];
+	get_ZBRCV_packet_address64(api->data,  address64);
+	for(int i=0; i<8; i++)printf("%02x:",address64[i]);
+	printf("\n");
+	//---- 16-bit Source Network Address
+	printf("* 16-bit Address: ");
+	unsigned char address16[2];
+	get_ZBRCV_packet_address16(api->data, address16);
+	printf("%02x:%02x\n",address16[0],address16[1]);
+	//---- Receive options
+	printf("* Options: ");
+	unsigned char options = get_ZBRCV_packet_options(api->data);
+	switch(options & 0x0F){
+		case PKT_ACK:printf("Packet Acknowledged - ");
+			break;
+		case PKT_BRD:printf("Packet was a broadcast packet - ");
+			break;
+		default:printf("No option");
+			break;
+	}
+	switch(options & 0xF0){
+		case PKT_ENCR:printf("Packet encrypted with APS encryption");
+			break;
+		case FRM_ENDD:printf("Packet was sent from an end device");
+			break;
+		case (PKT_ENCR | FRM_ENDD ):
+				printf("Packet encrypted with APS encryption & was sent from an end device");
+			break;
+		default:printf("No option");
+			break;
+	}
+	printf("\n");
+	//---- Receive Data
+	printf("* Receive Data: ");
+	//.... Length
+	unsigned char length=\
+			get_ZBRCV_packet_data_length(api->data->length);
+	//.... Data
+	unsigned char* receiveData=\
+			get_ZBRCV_packet_data(api->data);
+	for(int i=0; i<length; i++)printf("%02x",receiveData[i]);
+	printf("\n");
+	//... Free memory
+	free(receiveData);
 	return;
 }
 void
