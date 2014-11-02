@@ -88,6 +88,8 @@ int main(int argc, char **argv)
 			api = API_frame_decode(buf,n);
 			test(api);
 			//--- Free memory
+			free(api->data->cmdData);
+			free(api->data);
 			free(api);
 			free(buf);
 		}
