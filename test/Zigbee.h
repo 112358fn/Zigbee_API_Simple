@@ -18,15 +18,15 @@ ascii_to_hex(unsigned char *buffer, int n);
 void
 test(api_frame * apiData);
 void
-test_AT_response(api_frame * api);
+test_AT_response(data_frame * data);
 void
-test_ZBTR_status(api_frame * api);
+test_ZBTR_status(data_frame * data);
 void
-test_ZBRCV_packet(api_frame * api);
+test_ZBRCV_packet(data_frame * data);
 void
-test_NODE_id(api_frame * api);
+test_NODE_id(data_frame * data);
 void
-test_RAT_response(api_frame * api);
+test_RAT_response(data_frame * data);
 
 
 #endif

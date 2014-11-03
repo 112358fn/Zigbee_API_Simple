@@ -71,7 +71,14 @@
 #define PKT_BRD			0x02 // Packet was a broadcast packet
 #define	PKT_ENCR		0x20 // Packet encrypted with APS encryption
 #define	FRM_ENDD		0x40 // Packet was sent from an end device (if known)
-
+//---- Node Identification Indicator. Device Type
+#define COORD			0x0 //Coordinator
+#define ROUTER			0x1 //Router
+#define	END_DEV			0x2 //End Device
+//---- Node Identification Indicator. Source Event
+#define BUTTON			0x1 //Frame sent by node identification pushbutton even (D0 command)
+#define JOIN_EV			0x2 //Frame sent after joining event occurred (JN Command)
+#define	POWER_EV		0x3 //Frame sent after power cycle event occurred (JN Command)
 
 /********************************
  * Frames:						*
@@ -88,12 +95,18 @@ typedef struct DATA_frame {
 //---- API Frame ----
 typedef struct API_frame {
     unsigned char start_delimiter;// 0x7E
-    unsigned int length;      // Length
     data_frame * data;			  // Frame Data
     unsigned char checksum;       //Position of the msg on the webpage
 }api_frame;
 
-
+//---- Zigbee Structure ----
+typedef struct zigbeee_struct {
+    unsigned char address[8];
+    unsigned char network[2];
+    unsigned char string[0x10];
+    unsigned char parent[2];
+    unsigned char devicetype;
+}zigbee;
 
 /************************
  * Functions:
@@ -135,4 +148,19 @@ size_t
 get_ZBRCV_packet_data_length(unsigned int length);
 unsigned char *
 get_ZBRCV_packet_data(data_frame * data);
+
+//---- Node Identification Indicator
+//Indicates the information of the remote module that
+//transmitted the node identification frame.
+zigbee *
+NODE_id_decode(data_frame * data);
+//Indicates the 64-bit & 16-bit address of the sender module
+void
+get_NODE_id_source_addr64(data_frame * data, unsigned char* address);
+void
+get_NODE_id_source_addr16(data_frame * data, unsigned char* address);
+unsigned char
+get_NODE_id_options(data_frame * data);
+unsigned char
+get_NODE_id_event(data_frame * data);
 #endif

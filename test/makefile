@@ -16,8 +16,9 @@ EXECUTABLE=zigbee.bin
 CC=gcc
 CFLAGS=-std=c99 -U__STRICT_ANSI__ \
        -D_REENTRANT \
+       -W -Wall -pedantic -O3 \
        -I$(INCDIR)
-       #-W -Wall -pedantic -O1 \
+       #-W -Wall -pedantic -O3 \
        
 LDFLAGS=-lpthread -lm
 
