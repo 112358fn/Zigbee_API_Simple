@@ -163,4 +163,18 @@ unsigned char
 get_NODE_id_options(data_frame * data);
 unsigned char
 get_NODE_id_event(data_frame * data);
+
+//---- Remote Command Response
+void
+get_RAT_response_addr64(data_frame * data, unsigned char* address);
+void
+get_RAT_response_addr16(data_frame * data, unsigned char* address);
+void
+get_RAT_response_name(data_frame * data, unsigned char* name);
+unsigned char
+get_RAT_response_status(data_frame * data);
+size_t
+get_RAT_response_data_length(unsigned int length);
+unsigned char *
+get_RAT_response_data(data_frame * data);
 #endif

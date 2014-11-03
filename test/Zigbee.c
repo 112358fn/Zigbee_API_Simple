@@ -54,6 +54,7 @@ int main(int argc, char **argv)
     printf("*Zigbee Transmit Status: 7E00078B017D8400000171\n");
     printf("*Zigbee Receive Packet: 7E0011900013A20040522BAA7D84015278446174610D\n");
     printf("*Node Identifier Indicator: 7E0020950013A20040522BAA7D84027D840013A20040522BAA2000FFFE0101C105101E1B\n");
+    printf("*Remote Command Response: 7E001397550013A20040522BAA7D84534C0040522BAAF0\n");
 	/************************
 	 * Infinite Loop:
 	 * SELECT-System Call	*
@@ -76,7 +77,6 @@ int main(int argc, char **argv)
 		//---- We have Serial input ----
 		if (FD_ISSET(serialFd, &rfds))
 		{
-
 			//---- Read serial
 			int n=read(serialFd, buf, 0x100);
 			if(n<0){continue;}//Nothing read
@@ -198,9 +198,9 @@ test_AT_response(data_frame * data){
 	size_t length_AT=\
 			get_AT_response_data_length(data->length);
 	//.... Show AT parameters if exist
-	if(length_AT==0) {printf("None\n");return;}
 	unsigned char * cmdData=\
 			get_AT_response_data(data);
+	if(cmdData==NULL) {printf("None\n");return;}
 	for(unsigned int i=0; i<length_AT; i++)printf("%02x",cmdData[i]);
 	printf("\n");
 	//.... Free memory
@@ -370,7 +370,51 @@ void
 test_RAT_response(data_frame * data){
 	//---- Welcome Message ----
 	printf("Remote Command Response\n");
-
+	//----64-bit Source Address
+	printf("* 64-bit Address: ");
+	unsigned char address64[8];
+	get_RAT_response_addr64(data,  address64);
+	for(int i=0; i<8; i++)printf("%02x:",address64[i]);
+	printf("\n");
+	//---- 16-bit Source Network Address
+	printf("* 16-bit Address: ");
+	unsigned char address16[2];
+	get_RAT_response_addr16(data, address16);
+	printf("%02x:%02x\n",address16[0],address16[1]);
+	//----Declare AT command name
+	unsigned char name[2];
+	get_RAT_response_name( data, name);
+	printf("* AT command name:%c%c\n",name[0],name[1]);
+	//---- Switch AT command Status
+	printf("* Command Staus: ");
+	switch(get_RAT_response_status( data))
+	{
+		case ATOK:printf("OK\n");
+			break;
+		case ATERROR:printf("Error\n");
+			break;
+		case ATINVCMD:printf("invalid Command\n");
+			break;
+		case ATINVPAR:printf("invalid Parameters\n");
+			break;
+		case ATTXFAIL:printf("Tx Failure\n");
+			break;
+		default: printf("Unknown\n");
+			break;
+	}
+	//---- AT parameters
+	printf("* AT Parameters: ");
+	//.... Recover length
+	size_t length_AT=\
+			get_RAT_response_data_length(data->length);
+	//.... Show AT parameters if exist
+	unsigned char * cmdData=\
+			get_RAT_response_data(data);
+	if(cmdData==NULL) {printf("None\n");return;}
+	for(unsigned int i=0; i<length_AT; i++)printf("%02x",cmdData[i]);
+	printf("\n");
+	//.... Free memory
+	free(cmdData);
 	return;
 }
 

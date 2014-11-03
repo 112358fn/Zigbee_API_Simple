@@ -89,6 +89,7 @@ unsigned char *
 get_AT_response_data(data_frame * data){
 	size_t length = get_AT_response_data_length(data->length);
 	unsigned char* cmdData=NULL;
+	if(length==0)return NULL;
 	if((cmdData = (unsigned char*)malloc(length))==NULL) return NULL;
 	for(unsigned int i=0; i<length; i++)cmdData[i]=data->cmdData[4+i];
 	return cmdData;
@@ -228,7 +229,55 @@ get_NODE_id_event(data_frame * data){
 	return data->cmdData[data->length-6];
 }
 
-
-
+/************************************************
+ *	Remote Command Response Functions			*
+ *												*
+ ************************************************/
+/*
+ * Frame Type: 0x97
+ * If a module receives a remote command response RF data frame in
+ * response to a Remote AT Command Request, the module will send a
+ * Remote AT Command Response message out the UART. Some commands
+ * may send back multiple frames--for example, Node Discover (ND)
+ * command.
+ *
+ */
+//NOT USE
+//data->cmdData[0] is Frame ID
+void
+get_RAT_response_addr64(data_frame * data, unsigned char* address){
+	for(int i=0; i<8; i++)
+		address[i]=data->cmdData[i+1];
+	return;
+}
+void
+get_RAT_response_addr16(data_frame * data, unsigned char* address){
+	address[0]=data->cmdData[9];
+	address[1]=data->cmdData[10];
+	return;
+}
+void
+get_RAT_response_name(data_frame * data, unsigned char* name){
+	name[0]=data->cmdData[11];
+	name[1]=data->cmdData[12];
+	return;
+}
+unsigned char
+get_RAT_response_status(data_frame * data){
+	return data->cmdData[13];
+}
+size_t
+get_RAT_response_data_length(unsigned int length){
+	return (size_t)length-15;//-15=-Type-ID-64bit-16bit-AT-Status
+}
+unsigned char *
+get_RAT_response_data(data_frame * data){
+	size_t length = get_RAT_response_data_length(data->length);
+	unsigned char* cmdData=NULL;
+	if(length==0)return NULL;
+	if((cmdData = (unsigned char*)malloc(length))==NULL) return NULL;
+	for(unsigned int i=0; i<length; i++)cmdData[i]=data->cmdData[14+i];
+	return cmdData;
+}
 //----------------------------------------------------------------------------
 
