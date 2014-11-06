@@ -9,8 +9,8 @@ test "$1" == 'start' &&
 ( 
 socat -d -d PTY,link=$PWD/1 PTY,link=$PWD/2 &
 sleep 1s;
-konsole -e ./Zigbee_rcv 1 9600 &
-konsole -e ./Zigbee_rcv 2 9600 &
+konsole -e ./Zigbee_snd.bin 1 9600 &
+konsole -e ./Zigbee_snd.bin 2 9600 &
 )
 
 test "$1" == 'stop' &&
@@ -26,7 +26,7 @@ echo "Deteniendo Minicom, Socat, Zigbee y Konsole"
 killall socat konsole
 socat -d -d PTY,link=$PWD/1 PTY,link=$PWD/2 &
 sleep 1s;
-konsole -e ./Zigbee_rcv 6789 1 9600 &
-konsole -e ./Zigbee_rcv 6789 2 9600 &
+konsole -e ./Zigbee_snd.bin 6789 1 9600 &
+konsole -e ./Zigbee_snd.bin 6789 2 9600 &
 )
 
