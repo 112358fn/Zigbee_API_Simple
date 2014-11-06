@@ -13,7 +13,9 @@
 /****************
  * Definitions	*
  ****************/
-
+//---- Frame Definitions
+#define STARTDELIMITER	0x7e
+#define	FRAMEID			0x1		//Standard Frame ID
 //---- cmdID's (API Identifier) ----
 #define ATCMD			0X08	//AT Command Request
 #define	ZBTR			0x10	//ZigBee Transmit Request
@@ -27,9 +29,17 @@
 
 //---- Size (in Bytes) of frame's parts
 #define HEADER	        3			//Size of Star delimiter + LengthMSB + LengthLSB
+#define MIN_AT_DATA		4			//Size of Frame Type + FrameID + AT Command
+#define MIN_ZBTR_DATA	14			//Size of Frame Type + FrameID + Addr64 + Addr16 + BRD + Options
+#define MIN_RATCMD_DATA	15			//Size of Frame Type + FrameID + Addr64 + Addr16 + Options + AT Command
 #define PAYLOAD			72			//Size of Maximun payload (NP)
 #define	FRAMEDATA    	PAYLOAD+1   //Size of Frame Data(API-specific Structure)
 #define CHECKSUM		1   		//1 byte for checksum
+
+//---- ZigBee Transmit Request. Options
+#define D_ACK			0x01 // Disable ACK
+#define E_APS			0x20 // Enable APS encryption (if EE=1)
+#define EXT_TIMEOUT		0x40 // Use the extended transmission timeout for this destination
 
 //---- ATCommand Response. Command Status ----
 #define ATOK			0			//OK
@@ -108,9 +118,46 @@ typedef struct zigbeee_struct {
     unsigned char devicetype;
 }zigbee;
 
-/************************
- * Functions:
- ************************/
+
+
+
+/****************************
+ * API Frame Code Functions:
+ ****************************/
+//---- General API Frame functions
+size_t
+API_frame_length(unsigned char * buf);
+unsigned char
+API_frame_checksum(unsigned char * API_frame);
+
+//---- AT Request Functions & MACROS
+#define ATCMD_data_length(para_len) 	(MIN_AT_DATA)+(para_len) //Return Frame-specific Data length
+int
+ATCMD_request_length(int para_len);
+unsigned char *
+ATCMD_request(unsigned char AT[2], unsigned char * parameters,int para_len); //Generate AT request
+
+//---- ZigBee Transmit Request Functions & MACROS
+#define ZBTR_data_length(para_len) 	(MIN_ZBTR_DATA)+(para_len) //Return Frame-specific Data length
+int
+ZBTR_request_length(int RFdata_len);
+unsigned char *
+ZBTR_request(unsigned char addr64[8], unsigned char addr16[2],\
+				unsigned char broadcast, unsigned char options,\
+				unsigned char * RFdata, unsigned char RFdata_len);
+
+//---- Remote AT Command Request Functions & MACROS
+#define RATCMD_data_length(para_len) 	(MIN_RATCMD_DATA)+(para_len) //Return Frame-specific Data length
+int
+RATCMD_request_length(int para_len);
+unsigned char *
+RATCMD_request(unsigned char addr64[8], unsigned char addr16[2],\
+				unsigned char options, unsigned char AT[2],\
+				unsigned char * parameters, unsigned char para_len);
+
+/*****************************
+ * API Frame Decode Functions:
+ *****************************/
 //---- Decode Function ----
 api_frame *
 API_frame_decode(unsigned char * buf,int n);

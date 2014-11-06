@@ -11,7 +11,217 @@
 #include "Zigbee_API_Simple.h"
 #define	DEBUG 0
 
+//////////////////////////////////////////////////////////
+//														//
+//		API FRAME CODE FUNCTIONS:						//
+// Use it to generate API Frames						//
+//														//
+//////////////////////////////////////////////////////////
+/************************************
+ * General API Frame function 		*
+ * 									*
+ ************************************/
+size_t
+API_frame_length(unsigned char * API_frame){
+	return 4 +((((unsigned int)API_frame[1])<< 8)|\
+				((unsigned int)API_frame[2]));
+}
+unsigned char
+API_frame_checksum(unsigned char * API_frame){
+	unsigned int checksum=0;
+	size_t length = API_frame_length(API_frame);
 
+	//Not including frame delimiters and length, add all bytes
+	for (unsigned int i=0; i<length ; i++)
+			checksum+=API_frame[HEADER+i];
+	// keeping only the lowest 8 bits of the result and subtract
+	//the result from 0xFF.
+	return (0xFF)-(checksum & 0xFF);
+
+}
+
+/************************************
+ *	AT Command Request				*
+ *									*
+ ************************************/
+/*
+ * Frame Type: 0x08
+ * Used to query or set module parameters on the local
+ * device. This API command applies changes after executing
+ * the command.
+ *
+ */
+int
+ATCMD_request_length(int para_len){
+	return HEADER + \
+			MIN_AT_DATA + \
+			para_len + \
+			CHECKSUM;//Start+Length(2)+Type+Id+ATcomm+CheckSum
+}
+
+unsigned char *
+ATCMD_request(unsigned char AT[2], unsigned char * parameters, int para_len){
+	//---- Set API Frame length
+	int frame_length= ATCMD_request_length(para_len);
+	//---- Allocate the necessary space
+	unsigned char * API_frame=NULL;
+	if((API_frame = (unsigned char*)malloc(frame_length))==NULL) return NULL;
+
+	//---- Start filling the frame
+	//.... Start Delimiter
+	API_frame[0]=STARTDELIMITER;
+	//.... Length of Frame specific data
+	API_frame[1] = ((ATCMD_data_length(para_len))>>8)&0xFF;//Lenght MSB
+	API_frame[2] = (ATCMD_data_length(para_len)) & 0xFF;//Length LSB
+	//.... Frame Type
+	API_frame[3] = ATCMD;
+	//.... Frame ID
+	API_frame[4] = FRAMEID;
+	//.... AT Command
+	API_frame[5] = AT[0];
+	API_frame[6] = AT[1];
+	//.... AT Parameters
+	if(para_len>0){
+		for(int i=0; i<para_len; i++)
+			API_frame[7+i]=parameters[i];}
+	//....Checksum
+	API_frame[7+para_len]= API_frame_checksum(API_frame);
+
+	//---- Return frame length
+	return API_frame;
+}
+
+/************************************
+ *	ZigBee Transmit Request			*
+ *									*
+ ************************************/
+/*
+ * Frame Type: 0x10
+ * A Transmit Request API frame causes the module to send data as
+ * an RF packet to the specified destination. The 64-bit destination
+ * address should be set to 0x000000000000FFFF for a broadcast
+ * transmission (to all devices). The coordinator can be addressed
+ * by either setting the 64-bit address to all 0x00s and the 16-bit
+ * address to 0xFFFE, OR by setting the 64-bit address to the
+ * coordinator's 64-bit address and the 16-bit address to 0x0000.
+ * For all other transmissions, setting the 16-bit address to the
+ * correct 16-bit address can help improve performance when
+ * transmitting to multiple destinations. If a 16-bit address is
+ * not known, this field should be set to 0xFFFE (unknown). The
+ * Transmit Status frame (0x8B) will indicate the discovered
+ * 16-bit address, if successful.
+
+ *
+ */
+int
+ZBTR_request_length(int RFdata_len){
+	return HEADER + \
+			MIN_ZBTR_DATA + \
+			RFdata_len + \
+			CHECKSUM;
+}
+unsigned char *
+ZBTR_request(unsigned char addr64[8], unsigned char addr16[2],\
+				unsigned char broadcast, unsigned char options,\
+				unsigned char * RFdata, unsigned char RFdata_len){
+	//---- Set API Frame length
+	int frame_length= ZBTR_request_length(RFdata_len);
+	//---- Allocate the necessary space
+	unsigned char * API_frame=NULL;
+	if((API_frame = (unsigned char*)malloc(frame_length))==NULL) return NULL;
+	//---- Start filling the frame
+	//.... Start Delimiter
+	API_frame[0]=STARTDELIMITER;
+	//.... Length of Frame specific data
+	API_frame[1] = ((ZBTR_data_length(RFdata_len))>>8)&0xFF;//Lenght MSB
+	API_frame[2] = (ZBTR_data_length(RFdata_len)) & 0xFF;//Length LSB
+	//.... Frame Type
+	API_frame[3] = ZBTR;
+	//.... Frame ID
+	API_frame[4] = FRAMEID;
+	//.... 64-bit Destination Address
+	for(int i=0; i<8; i++)API_frame[5+i] = addr64[i];
+	//.... 16-bit Destination Network Address
+	API_frame[13] = addr16[0];
+	API_frame[14] = addr16[1];
+	//.... Broadcast Radius
+	API_frame[15] = broadcast;
+	//.... Options
+	API_frame[16] = options;
+	//.... Data Payload
+	if(RFdata_len>0){
+		for(int i=0; i<RFdata_len; i++)
+			API_frame[17+i]=RFdata[i];}
+	//....Checksum
+	API_frame[17+RFdata_len]= API_frame_checksum(API_frame);
+	//---- Return frame length
+	return API_frame;
+}
+/************************************
+ * Remote AT Command Request		*
+ *									*
+ ************************************/
+/*
+ * Frame Type: 0x17
+ * Used to query or set module parameters on a remote device.
+ * For parameter changes on the remote device to take effect,
+ * changes must be applied, either by setting the apply changes
+ * options bit, or by sending an AC command to the remote.
+ *
+ */
+int
+RATCMD_request_length(int para_len){
+	return HEADER + \
+			MIN_RATCMD_DATA + \
+			para_len + \
+			CHECKSUM;
+}
+unsigned char *
+RATCMD_request(unsigned char addr64[8], unsigned char addr16[2],\
+				unsigned char options, unsigned char AT[2],\
+				unsigned char * parameters, unsigned char para_len){
+	//---- Set API Frame length
+	int frame_length= RATCMD_request_length(para_len);
+	//---- Allocate the necessary space
+	unsigned char * API_frame=NULL;
+	if((API_frame = (unsigned char*)malloc(frame_length))==NULL) return NULL;
+	//---- Start filling the frame
+	//.... Start Delimiter
+	API_frame[0]=STARTDELIMITER;
+	//.... Length of Frame specific data
+	API_frame[1] = ((RATCMD_data_length(para_len))>>8)&0xFF;//Lenght MSB
+	API_frame[2] = (RATCMD_data_length(para_len)) & 0xFF;//Length LSB
+	//.... Frame Type
+	API_frame[3] = RATCMD;
+	//.... Frame ID
+	API_frame[4] = FRAMEID;
+	//.... 64-bit Destination Address
+	for(int i=0; i<8; i++)API_frame[5+i] = addr64[i];
+	//.... 16-bit Destination Network Address
+	API_frame[13] = addr16[0];
+	API_frame[14] = addr16[1];
+	//.... Remote Command Options
+	API_frame[15] = options;
+	//.... AT Command
+	API_frame[16] = AT[0];
+	API_frame[17] = AT[1];
+	//.... AT Parameters
+	if(para_len>0){
+		for(int i=0; i<para_len; i++)
+			API_frame[18+i]=parameters[i];}
+	//....Checksum
+	API_frame[18+para_len]= API_frame_checksum(API_frame);
+	//---- Return frame length
+	return API_frame;
+}
+
+
+//////////////////////////////////////////////////////////
+//														//
+//		DECODE FUNCTIONS								//
+//Use it to decode a received API Frame					//
+//														//
+//////////////////////////////////////////////////////////
 /********************************************************
  * API_frame_decode										*
  * 														*
@@ -28,7 +238,7 @@ API_frame_decode(unsigned char * buf,int n)
 	for(int i=0;i<n;i++)packet[i]=buf[i];
 	//---- Create Data Space ----
 	unsigned int length=(((unsigned int)packet[1])<< 8)|\
-						((unsigned int)packet[2]);
+						((unsigned int)packet[2]); //length=cmdID+cmdData
 	unsigned char * cmdData = NULL;
 	if( (cmdData = (unsigned char*) malloc(length-1))== NULL)exit(-1);
 	//---- Create the Data Frame ----
