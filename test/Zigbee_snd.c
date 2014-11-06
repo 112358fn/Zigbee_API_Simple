@@ -1,5 +1,5 @@
 /*
- *  Zigbee.c
+ *  Zigbee_snd.c
  *  
  *
  *  Created by Alvaro Rodrigo Alonso Bivou.
@@ -7,7 +7,8 @@
  *
  */
 
-#include "Zigbee.h"
+#include "Zigbee_snd.h"
+
 
 
 #define DEBUG	0
@@ -15,7 +16,8 @@
 
 /************************************************************
  * Main														*
- * Function: Send and Get messages with API Frame format	*
+ * Function: Generate messages with API Frame format and 	*
+ * send it													*
  ************************************************************/
 int main(int argc, char **argv)
 {
@@ -24,7 +26,6 @@ int main(int argc, char **argv)
 	 ********************/
 	//---- API Frame ----
 	api_frame *api=NULL;
-	
 	//---- Serial Port ----
 	int serialFd=0;
     char serialport[256];
@@ -48,13 +49,8 @@ int main(int argc, char **argv)
     if(serialFd==-1) {fprintf(stderr,"invalid serialport %s\n",argv[2]); exit(1); }
 	//---- Send Welcome Message ----
     printf("Test Program. Conected to Serial:%s\n",argv[1]);
-    printf("Test the library sending one of the following frames:\n");
-    printf("*ATID: 7E00040801494469\n");
-    printf("*ATResponse: 7E00058801424400F0\n");
-    printf("*Zigbee Transmit Status: 7E00078B017D8400000171\n");
-    printf("*Zigbee Receive Packet: 7E0011900013A20040522BAA7D84015278446174610D\n");
-    printf("*Node Identifier Indicator: 7E0020950013A20040522BAA7D84027D840013A20040522BAA2000FFFE0101C105101E1B\n");
-    printf("*Remote Command Response: 7E001397550013A20040522BAA7D84534C0040522BAAF0\n");
+    printf("Test the library to generate API frames:\n");
+    printf("Press Enter to start:");
 	/************************
 	 * Infinite Loop:
 	 * SELECT-System Call	*

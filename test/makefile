@@ -8,9 +8,9 @@ INCDIR=$(ROOT)/include
 SRCDIR=$(ROOT)/src
 
 SOURCES=$(SRCDIR)/Serial_Init.c \
-		$(SRCDIR)/Zigbee_API_Simple.c \
-		Zigbee.c
-EXECUTABLE=zigbee.bin
+		$(SRCDIR)/Zigbee_API_Simple.c 
+
+EXECUTABLE= Zigbee_rcv Zigbee_snd
 
 
 CC=gcc
@@ -26,13 +26,13 @@ all: clean ${EXECUTABLE}
 .SUFFIXES:
 
 
-${EXECUTABLE}:
-	${CC} -o $@ ${SOURCES} ${CFLAGS} ${LDFLAGS}
+% : %.c
+	${CC} -o $@.bin $< ${SOURCES} ${CFLAGS} ${LDFLAGS}
 	@echo
 
 
 clean :
-	rm -f ${EXECUTABLE} *.o a.out core
+	rm -f *.bin *.o a.out core
 
 ##############################################################################
 

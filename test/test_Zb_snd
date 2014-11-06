@@ -1,0 +1,32 @@
+#
+#!/bin/sh
+#Script for test Zigbee.c
+#Dependencies:
+# socat - Multipurpose relay (SOcket CAT)
+# konsole - terminal emulator for KDE
+
+test "$1" == 'start' &&
+( 
+socat -d -d PTY,link=$PWD/1 PTY,link=$PWD/2 &
+sleep 1s;
+konsole -e ./Zigbee_rcv 1 9600 &
+konsole -e ./Zigbee_rcv 2 9600 &
+)
+
+test "$1" == 'stop' &&
+(
+echo "Deteniendo Socat, Zigbee y Konsole"
+killall socat konsole
+)
+
+
+test "$1" == 'restart' &&
+( 
+echo "Deteniendo Minicom, Socat, Zigbee y Konsole"
+killall socat konsole
+socat -d -d PTY,link=$PWD/1 PTY,link=$PWD/2 &
+sleep 1s;
+konsole -e ./Zigbee_rcv 6789 1 9600 &
+konsole -e ./Zigbee_rcv 6789 2 9600 &
+)
+

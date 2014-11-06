@@ -32,3 +32,6 @@
 #Eclipse files
 .cproject
 .project
+
+#TextFiles
+*.txt
