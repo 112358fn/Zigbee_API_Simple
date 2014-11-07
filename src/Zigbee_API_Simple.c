@@ -29,7 +29,7 @@ API_frame_length(unsigned char * API_frame){
 unsigned char
 API_frame_checksum(unsigned char * API_frame){
 	unsigned int checksum=0;
-	size_t length = API_frame_length(API_frame);
+	size_t length = API_frame_length(API_frame)-4;
 
 	//Not including frame delimiters and length, add all bytes
 	for (unsigned int i=0; i<length ; i++)

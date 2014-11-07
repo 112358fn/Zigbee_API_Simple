@@ -10,10 +10,6 @@
 #include "Zigbee_snd.h"
 
 
-
-#define DEBUG	0
-
-
 /************************************************************
  * Main														*
  * Function: Generate messages with API Frame format and 	*

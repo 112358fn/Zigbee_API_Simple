@@ -162,7 +162,7 @@ RATCMD_request(unsigned char addr64[8], unsigned char addr16[2],\
 api_frame *
 API_frame_decode(unsigned char * buf,int n);
 
-//---- AT Command Functions
+//---- AT Command Response Functions
 void
 get_AT_response_name(data_frame * data, unsigned char* name);
 unsigned char
