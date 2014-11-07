@@ -29,16 +29,7 @@ test_RATCMD_request(unsigned char* buf, int length);
 //Test Reception - Decoding
 void
 test(api_frame * apiData);
-void
-test_AT_response(data_frame * data);
-void
-test_ZBTR_status(data_frame * data);
-void
-test_ZBRCV_packet(data_frame * data);
-void
-test_NODE_id(data_frame * data);
-void
-test_RAT_response(data_frame * data);
+
 
 
 #endif
