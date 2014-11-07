@@ -12,4 +12,5 @@ Folders
 
 TODO
 ====
-- [ ] Add frame generation
+- [x] Add frame generation
+- [ ] Add Examples(Conexion, message reception)
