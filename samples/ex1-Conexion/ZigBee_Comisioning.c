@@ -79,13 +79,6 @@ int main(int argc, char **argv)
 			if(n<0){continue;}//Nothing read
 			//---- Decode API frame received
 			api = API_frame_decode(buf,n);
-			//Test API Frame
-//				printf("\n****************\n");
-//				printf("* API Frame    *");
-//				printf("\n****************\n");
-//				printf("Start:%02x\n",api->start_delimiter);
-//				printf("Lenght:%02x\n",api->data->length);
-//				printf("CheckSum:%02x\n",api->checksum);
 			//---- Switch
 			switch(api->data->cmdID){
 				case NODEID:
