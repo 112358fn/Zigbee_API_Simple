@@ -96,6 +96,7 @@ int main(int argc, char **argv)
 					switch(get_ZBTR_status_deliveryST(api->data)){
 					    case SUCCESS:
 					    	printf("Success\n");
+							free(zb_elem);
 							break;
 					    default:
 					    	printf("Delivery Error.Retrying\n");
@@ -107,7 +108,6 @@ int main(int argc, char **argv)
 					break;
 			}
 			//--- Free memory
-			free(zb_elem);
 			free(api->data->cmdData);
 			free(api->data);
 			free(api);

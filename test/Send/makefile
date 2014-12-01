@@ -1,7 +1,7 @@
 ##############################################################################
 
 #Root Directory
-ROOT=..
+ROOT=../..
 #Path to include directory
 INCDIR=$(ROOT)/include
 #Path to source directory
@@ -10,7 +10,7 @@ SRCDIR=$(ROOT)/src
 SOURCES=$(SRCDIR)/Serial_Init.c \
 		$(SRCDIR)/Zigbee_API_Simple.c 
 
-EXECUTABLE= Zigbee_rcv Zigbee_snd Zigbee_snd_rcv
+EXECUTABLE= Zigbee_snd
 
 
 CC=gcc
