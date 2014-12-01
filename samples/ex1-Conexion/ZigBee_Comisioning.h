@@ -17,10 +17,4 @@
 void
 handshake(zigbee* zb_elem, int serialFd);
 
-void
-test_ZBTR_status(data_frame * data);
-void
-test_NODE_id(data_frame * data);
-
-
 #endif
