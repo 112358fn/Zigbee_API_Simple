@@ -366,7 +366,7 @@ get_ZBRCV_packet_options(data_frame * data){
 }
 size_t
 get_ZBRCV_packet_data_length(unsigned int length){
-	return length-11;//=FrameLength-FrameType-64Addr-16Addr-Options
+	return length-12;//=FrameLength-FrameType-64Addr-16Addr-Options
 }
 unsigned char *
 get_ZBRCV_packet_data(data_frame * data){
@@ -490,4 +490,3 @@ get_RAT_response_data(data_frame * data){
 	return cmdData;
 }
 //----------------------------------------------------------------------------
-

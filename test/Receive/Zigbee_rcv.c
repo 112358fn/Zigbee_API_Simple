@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     printf("Test the library sending one of the following frames:\n");
     printf("*ATResponse: 7E00058801424400F0\n");
     printf("*Zigbee Transmit Status: 7E00078B017D8400000171\n");
-    printf("*Zigbee Receive Packet: 7E0011900013A20040522BAA7D84015278446174610D\n");
+    printf("*Zigbee Receive Packet: 7E0012900013A20040522BAA7D84015278446174610C\n");
     printf("*Node Identifier Indicator: 7E0020950013A20040522BAA7D84027D840013A20040522BAA2000FFFE0101C105101E1B\n");
     printf("*Remote Command Response: 7E001397550013A20040522BAA7D84534C0040522BAAF0\n");
 	/************************
