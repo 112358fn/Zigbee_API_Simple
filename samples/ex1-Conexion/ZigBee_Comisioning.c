@@ -80,12 +80,12 @@ int main(int argc, char **argv)
 			//---- Decode API frame received
 			api = API_frame_decode(buf,n);
 			//Test API Frame
-				printf("\n****************\n");
-				printf("* API Frame    *");
-				printf("\n****************\n");
-				printf("Start:%02x\n",api->start_delimiter);
-				printf("Lenght:%02x\n",api->data->length);
-				printf("CheckSum:%02x\n",api->checksum);
+//				printf("\n****************\n");
+//				printf("* API Frame    *");
+//				printf("\n****************\n");
+//				printf("Start:%02x\n",api->start_delimiter);
+//				printf("Lenght:%02x\n",api->data->length);
+//				printf("CheckSum:%02x\n",api->checksum);
 			//---- Switch
 			switch(api->data->cmdID){
 				case NODEID:
@@ -134,6 +134,7 @@ int main(int argc, char **argv)
 
 void
 handshake(zigbee* zb_elem, int serialFd){
+	printf("New Zigbee conexion\n");
 	//---- Generate the API Frame for Transmit request
 	unsigned char RFdata[5] = {'h','o','l','a','\0'};
 	unsigned char * API_frame= ZBTR_request(zb_elem->address, zb_elem->network, 0, 0, RFdata, 5);

@@ -9,6 +9,7 @@
 
 #include "ZigBee_Comisioning_client.h"
 
+int CONECTED=0;
 
 /************************************************************
  * Main														*
@@ -57,7 +58,7 @@ int main(int argc, char **argv)
 	for(;;)
 	{
 		//---- send ATCB1 to generate ND messages to the coordinator
-		send_ND(serialFd);
+		if(!CONECTED)send_ND(serialFd);
 		//---- wait for incoming informations from: ----
 		FD_ZERO(&rfds);
 		//---- standard input ----
@@ -80,23 +81,60 @@ int main(int argc, char **argv)
 			//---- Decode API frame received
 			api = API_frame_decode(buf,n);
 			//Test API Frame
-				printf("\n****************\n");
-				printf("* API Frame    *");
-				printf("\n****************\n");
-				printf("Start:%02x\n",api->start_delimiter);
-				printf("Lenght:%02x\n",api->data->length);
-				printf("CheckSum:%02x\n",api->checksum);
+//				printf("\n****************\n");
+//				printf("* API Frame    *");
+//				printf("\n****************\n");
+//				printf("Start:%02x\n",api->start_delimiter);
+//				printf("Lenght:%02x\n",api->data->length);
+//				printf("CheckSum:%02x\n",api->checksum);
+//				printf("CmdID:%02x\n",api->data->cmdID);
 			//---- Switch
 			switch(api->data->cmdID){
+				//.... Zigbee Trasnmit Satus
 				case ZBTR_STATUS:
 					switch(get_ZBTR_status_deliveryST(api->data)){
-					    case SUCCESS:
-					    	printf("Success\n");
-							break;
-					    default:
-					    	printf("Delivery Error.Retrying\n");
-							break;
+					case SUCCESS:
+					  	printf("Success\n");
+						break;
+					default:
+						printf("Delivery Error.Retrying\n");
+						break;
 					}
+					break;
+				//.... AT response
+				case ATRESPONSE:
+					printf("* Command Staus: ");
+						switch(get_AT_response_status(api->data))
+						{
+							case ATOK:printf("OK\n");
+									CONECTED=1;
+								break;
+							case ATERROR:printf("Error\n");
+								break;
+							case ATINVCMD:printf("invalid Command\n");
+								break;
+							case ATINVPAR:printf("invalid Parameters\n");
+								break;
+							case ATTXFAIL:printf("Tx Failure\n");
+								break;
+							default: printf("Unknown\n");
+								break;
+						}
+					break;
+				//.... Zigbee Receive Packet
+				case ZBRECVPCK://---- Receive Data
+					printf("* Receive Data: ");
+					//.... Length
+					unsigned char length=\
+							get_ZBRCV_packet_data_length(api->data->length);
+					printf("Length:%02x",length);
+					//.... Data
+					unsigned char* receiveData=\
+							get_ZBRCV_packet_data(api->data);
+					for(int i=0; i<length; i++)printf("%c",receiveData[i]);
+					printf("\n");
+					//... Free memory
+					free(receiveData);
 					break;
 				default:
 					break;
