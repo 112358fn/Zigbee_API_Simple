@@ -56,6 +56,8 @@ int main(int argc, char **argv)
 	fd_set rfds;
 	for(;;)
 	{
+		//---- send ATCB1 to generate ND messages to the coordinator
+		send_ND(serialFd);
 		//---- wait for incoming informations from: ----
 		FD_ZERO(&rfds);
 		//---- standard input ----
@@ -122,6 +124,27 @@ int main(int argc, char **argv)
 	//---- close serial socket ----
 	close(serialFd);
 	return 0;
+}
+
+
+void send_ND(int serialFd){
+	//---- Pointer to the API frame space of memory
+	unsigned char * API_frame=NULL;
+	//---- API Frame of AT CB 1
+	unsigned char AT[2]={'C','B'};
+	unsigned char parameter= 1;
+	API_frame = ATCMD_request(AT, &parameter,1);
+
+
+	if(API_frame==NULL)return;
+	//---- Send API frame
+	int n= API_frame_length(API_frame);
+	if((n) != write(serialFd,API_frame,n))
+		printf("Fail to send APIframe to serial\n");
+	//---- Free Memory
+	free(API_frame);
+	return;
+
 }
 
 

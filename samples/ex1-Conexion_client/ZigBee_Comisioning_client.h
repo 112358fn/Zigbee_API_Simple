@@ -13,7 +13,7 @@
 #if !defined(_ZIGBEE_COMISIONING_H)
 #define _ZIGBEE_COMISIONING_H
 //---- Functions
-
+void send_ND(int serialFd);
 
 
 #endif
