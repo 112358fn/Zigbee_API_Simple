@@ -142,7 +142,8 @@ ATCMD_request(unsigned char AT[2], unsigned char * parameters,int para_len); //G
 int
 ZBTR_request_length(int RFdata_len);
 unsigned char *
-ZBTR_request(unsigned char addr64[8], unsigned char addr16[2],\
+ZBTR_request(unsigned char frameID,\
+				unsigned char addr64[8], unsigned char addr16[2],\
 				unsigned char broadcast, unsigned char options,\
 				unsigned char * RFdata, unsigned char RFdata_len);
 
@@ -159,10 +160,21 @@ RATCMD_request(unsigned char addr64[8], unsigned char addr16[2],\
  * API Frame Decode Functions:
  *****************************/
 //---- Decode Function ----
+unsigned char
+API_frame_is_correct(unsigned char * buf,unsigned int n);
+/*
+ * This function is optional and mainly for educational
+ * purpose use decode_API_frame instead
+ */
 api_frame *
-API_frame_decode(unsigned char * buf,int n);
+API_frame_decode(unsigned char * buf,unsigned int n);
+data_frame *
+decode_API_frame(unsigned char * buf,unsigned int n);
+
 
 //---- AT Command Response Functions
+unsigned char
+get_AT_response_frameid(data_frame * data);
 void
 get_AT_response_name(data_frame * data, unsigned char* name);
 unsigned char
@@ -174,6 +186,8 @@ get_AT_response_data(data_frame * data);
 
 
 //---- ZigBee Transmit Status
+unsigned char
+get_ZBTR_status_frameid(data_frame * data);
 void
 get_ZBTR_status_address16(data_frame * data, unsigned char* address);
 unsigned char

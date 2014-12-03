@@ -121,7 +121,8 @@ ZBTR_request_length(int RFdata_len){
 			CHECKSUM;
 }
 unsigned char *
-ZBTR_request(unsigned char addr64[8], unsigned char addr16[2],\
+ZBTR_request(unsigned char frameID, \
+				unsigned char addr64[8], unsigned char addr16[2],\
 				unsigned char broadcast, unsigned char options,\
 				unsigned char * RFdata, unsigned char RFdata_len){
 	//---- Set API Frame length
@@ -138,7 +139,7 @@ ZBTR_request(unsigned char addr64[8], unsigned char addr16[2],\
 	//.... Frame Type
 	API_frame[3] = ZBTR;
 	//.... Frame ID
-	API_frame[4] = FRAMEID;
+	API_frame[4] = frameID;
 	//.... 64-bit Destination Address
 	for(int i=0; i<8; i++)API_frame[5+i] = addr64[i];
 	//.... 16-bit Destination Network Address
@@ -230,42 +231,102 @@ RATCMD_request(unsigned char addr64[8], unsigned char addr16[2],\
  * buf - pointer to the data buffer						*
  * n - number of bytes in the buffer					*
  ********************************************************/
+unsigned char
+API_frame_is_correct(unsigned char * buf,unsigned int n){
+
+	//---- Verified start delimiter
+	if(buf[0]!=0x7e)return 0;
+
+	//---- Verified length
+	unsigned int length=(((unsigned int)buf[1])<< 8)|\
+						((unsigned int)buf[2]); //length=cmdID+cmdData
+	if(n<length+4)return 0;
+
+	//---- Verified checksum
+	unsigned int checksum = 0;
+	checksum+=buf[3];
+	for(unsigned int i=0; i < (length-1); i++)
+		checksum += buf[4+i];
+
+	checksum+=buf[length + 3];
+	if((checksum&0xFF)!=0xFF)return 0;
+
+
+
+	return 1;
+}
+/*
+ * This function is optional mainly for educational
+ * purpose use decode_API_frame instead
+ */
 api_frame *
-API_frame_decode(unsigned char * buf,int n)
+API_frame_decode(unsigned char * buf,unsigned int n)
 {
-	//---- Copy buffer to local allocated memory ----
-	unsigned char *packet=(unsigned char*)malloc(n);
-	for(int i=0;i<n;i++)packet[i]=buf[i];
-	//---- Create Data Space ----
-	unsigned int length=(((unsigned int)packet[1])<< 8)|\
-						((unsigned int)packet[2]); //length=cmdID+cmdData
-	unsigned char * cmdData = NULL;
-	if( (cmdData = (unsigned char*) malloc(length-1))== NULL)exit(-1);
-	//---- Create the Data Frame ----
-	data_frame * data = NULL;
-	if( (data = (data_frame*) malloc(sizeof(data_frame)))== NULL)exit(-1);
+
+	if(!API_frame_is_correct(buf,n))return NULL;
+
 	//---- Create the API Frame ----
 	api_frame * api = NULL;
 	if( (api = (api_frame*) malloc(sizeof(api_frame)))== NULL)exit(-1);
+	//---- Create the Data Frame ----
+	data_frame * data = NULL;
+	if( (data = (data_frame*) malloc(sizeof(data_frame)))== NULL)exit(-1);
+	//---- Create Data Space ----
+	unsigned int length=(((unsigned int)buf[1])<< 8)|\
+						((unsigned int)buf[2]); //length=cmdID+cmdData
+	unsigned char * cmdData = NULL;
+	if( (cmdData = (unsigned char*) malloc(length-1))== NULL)exit(-1);
+
 	//---- Link Data frame to API frame
 	api->data = data;
 	//---- Link Data Space to Data frame
 	api->data->cmdData=cmdData;
+
 	//---- Fill the API Frame ----
-	api->start_delimiter=packet[0];
+	api->start_delimiter=buf[0];
 	//.... Fill the Data Frame....
 	api->data->length = length;
-	api->data->cmdID=packet[3];
+	api->data->cmdID=buf[3];
 	for(unsigned int i=0; i < (length-1); i++)
-		api->data->cmdData[i]=packet[4+i];
+		api->data->cmdData[i]=buf[4+i];
 	//.... Checksum ....
-	api->checksum=packet[api->data->length + 3];
+	api->checksum=buf[api->data->length + 3];
 
-	//---- Free memory ----
-	free(packet);
 	//---- Return the API Frame ----
 	return api;
 }
+
+data_frame *
+decode_API_frame(unsigned char * buf,unsigned int n)
+{
+
+	if(!API_frame_is_correct(buf,n))return NULL;
+
+	//---- Create the Data Frame ----
+	data_frame * data = NULL;
+	if( (data = (data_frame*) malloc(sizeof(data_frame)))== NULL)exit(-1);
+	//---- Create Data Space ----
+	unsigned int length=(((unsigned int)buf[1])<< 8)|\
+						((unsigned int)buf[2]); //length=cmdID+cmdData
+	unsigned char * cmdData = NULL;
+	if( (cmdData = (unsigned char*) malloc(length-1))== NULL)exit(-1);
+
+
+	//---- Link Data Space to Data frame
+	data->cmdData=cmdData;
+
+
+	//.... Fill the Data Frame....
+	data->length = length;
+	data->cmdID=buf[3];
+	for(unsigned int i=0; i < (length-1); i++)
+		data->cmdData[i]=buf[4+i];
+
+
+	//---- Return the API Frame ----
+	return data;
+}
+
 
 /************************************
  *	AT Command Response Functions	*
@@ -281,6 +342,10 @@ API_frame_decode(unsigned char * buf,int n)
  */
 //NOT USE
 //data->cmdData[0] is Frame ID
+unsigned char
+get_AT_response_frameid(data_frame * data){
+	return data->cmdData[0];
+}
 void
 get_AT_response_name(data_frame * data, unsigned char* name){
 	name[0]=data->cmdData[1];
@@ -317,8 +382,11 @@ get_AT_response_data(data_frame * data){
  * was transmitted successfully or if there was a failure.
  *
  */
-//NOT USE
-//data->cmdData[0] is Frame ID
+
+unsigned char
+get_ZBTR_status_frameid(data_frame * data){
+	return data->cmdData[0];
+}
 void
 get_ZBTR_status_address16(data_frame * data, unsigned char* address){
 	address[0]=data->cmdData[1];

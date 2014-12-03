@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     printf("Test the library sending one of the following frames:\n");
     printf("*ATResponse: 7E00058801424400F0\n");
     printf("*Zigbee Transmit Status: 7E00078B017D8400000171\n");
-    printf("*Zigbee Receive Packet: 7E0012900013A20040522BAA7D84015278446174610C\n");
+    printf("*Zigbee Receive Packet: 7E0013900013A20040522BAA7D8401527844617461010C\n");
     printf("*Node Identifier Indicator: 7E0020950013A20040522BAA7D84027D840013A20040522BAA2000FFFE0101C105101E1B\n");
     printf("*Remote Command Response: 7E001397550013A20040522BAA7D84534C0040522BAAF0\n");
 	/************************
@@ -82,12 +82,14 @@ int main(int argc, char **argv)
 			//---- Decode API frame received
 			api = API_frame_decode(buf,n);
 			//---- Test specific's frames functions
+			if(api==NULL){
+				printf("\n***********************\n");
+				printf("* API Frame Not well formed *");
+				printf("\n***********************\n");
+				continue;
+			}
 			test(api);
 			//--- Free memory
-			//.... Free memory
-			free(api->data->cmdData);
-			free(api->data);
-			free(api);
 			free(buf);
 
 		}
@@ -131,7 +133,7 @@ ascii_to_hex(unsigned char *buffer, int n){
 void
 test(api_frame * api){
 
-	//Test API Frame
+
 	printf("\n****************\n");
 	printf("* API Frame    *");
 	printf("\n****************\n");
@@ -164,12 +166,21 @@ test(api_frame * api){
 	default:printf("Default. Not Implemented Yet");
 		break;
 	}
+	//.... Free memory
+	free(api->data->cmdData);
+	free(api->data);
+	free(api);
+
 	return;
 }
 void
 test_AT_response(data_frame * data){
 	//----Print Welcome Message
 	printf("AT Command Response\n");
+	//---- Frame ID
+	unsigned char frameid=\
+	get_AT_response_frameid(data);
+	printf("* Frame ID: %02x\n",frameid);
 	//----Declare AT command name
 	unsigned char name[2];
 	get_AT_response_name( data, name);
@@ -210,6 +221,10 @@ void
 test_ZBTR_status(data_frame * data){
 	//---- Welcome Message
 	printf("Zigbee Transmit Status\n");
+	//---- Frame ID
+	unsigned char frameid=\
+	get_ZBTR_status_frameid(data);
+	printf("* Frame ID: %02x\n",frameid);
 	//---- Declare 16 bit Address
 	unsigned char address[2];
 	get_ZBTR_status_address16(data, address);

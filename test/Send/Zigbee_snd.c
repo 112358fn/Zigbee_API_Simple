@@ -235,7 +235,7 @@ test_ZBTR_request(unsigned char* buf, int length){
 	printf("\n");
 
 	//---- Generate the API Frame for AT request
-	API_frame= ZBTR_request(addr64, addr16,
+	API_frame= ZBTR_request(0x8,addr64, addr16,
 							 broadcast, options,\
 							 RFdata, RFdata_len);
 	length=ZBTR_request_length(RFdata_len);
