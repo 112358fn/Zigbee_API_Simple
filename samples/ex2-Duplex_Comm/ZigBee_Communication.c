@@ -63,6 +63,22 @@ int main(int argc, char **argv)
 	fd_set rfds;
 	for(;;)
 	{
+		//---- Send the message from the messages' table
+		if(msg_list!=NULL){
+			msg * msg_elem = NULL;
+			for(msg_elem=msg_list;msg_elem != NULL; \
+				msg_elem=(msg*)(msg_elem->hh.next)){
+				printf("Message element: %d\n",msg_elem->key);
+				for(int i=0; i<msg_elem->length; i++){
+					printf(":%02x:",msg_elem->API_frame[i]);
+				}
+				printf("\n");
+				if((msg_elem->length) != \
+					write(serialFd,msg_elem->API_frame,msg_elem->length ))
+					printf("Fail to send APIframe to serial\n");
+			}
+		}
+
 		//---- wait for incoming informations from: ----
 		FD_ZERO(&rfds);
 		//---- standard input ----
@@ -114,20 +130,6 @@ int main(int argc, char **argv)
 			}
 			//---- Free Memory
 			free(buffer);
-		}
-
-		//---- Nothing received then send the message from
-		//---- the messages' table
-		else
-		{
-			msg * msg_elem = NULL;
-			for(msg_elem=msg_list;\
-				msg_elem != NULL; \
-				msg_elem=(msg*)(msg_elem->hh.next)){
-//				if((msg_elem->length) != \
-//					write(serialFd,msg_elem->API_frame,msg_elem->length ))
-//				printf("Fail to send APIframe to serial\n");
-			}
 		}
 
 	}
@@ -188,7 +190,6 @@ void
 send_this(unsigned char * buffer){
 
 
-	msg * msg_elem=NULL;
 	zigbee_hash * zgb_elem=NULL;
 	int n = strlen((char *)buffer);
 
@@ -197,17 +198,21 @@ send_this(unsigned char * buffer){
 	if(zigbee_hash_table==NULL) {
 		printf("Not connected to any Zigbee yet\n");
 		printf("It will be send if a new connection occurs\n");
-		//To start we create a new element to the table
+
+		//New message: New key
+		msg * msg_elem = NULL;
 		if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
 		msg_key+=1;
-		msg_elem->key=msg_key;
-		//Copy buffer to the structure as a raw message
+
+		//Generate the Raw message
 		unsigned char * raw_msg = NULL;
 		raw_msg = (unsigned char *)malloc(n);
 		if ( raw_msg == NULL) return;
 		for(int i=0; i<n; i++)raw_msg[i]=buffer[i];
+
+		//Copy buffer to the structure as a raw message
+		msg_elem->key=msg_key;
 		msg_elem->raw_message = raw_msg;
-		//Store its length
 		msg_elem->length = n;
 		//Finally add the element to the list
 		HASH_ADD_INT(msg_list, key, msg_elem);
@@ -224,19 +229,23 @@ send_this(unsigned char * buffer){
 			zgb_elem=(zigbee_hash*)(zgb_elem->hh.next))
 		{
 			//New message: New key
+			msg * msg_elem = NULL;
+			if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
 			msg_key+=1;
-			//---- Generate the API Frame for Transmit request
+
+			//Generate the API Frame for Transmit request
 			unsigned char * API_frame= \
 					ZBTR_request(msg_key,\
 								zgb_elem->zb->address, \
 								zgb_elem->zb->network, \
 								0, 0, buffer, n);
 			if(API_frame==NULL)return;
+
 			//Copy the API frame to the structure
-			if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
 			msg_elem->key = msg_key;
 			msg_elem->API_frame = API_frame;
 			msg_elem->length = API_frame_length(API_frame);
+			HASH_ADD_INT(msg_list, key, msg_elem);
 		}
 	}
 	return;
@@ -247,46 +256,33 @@ void
 send_AT(unsigned char * buffer){
 
 	printf("Sending AT Command\n");
+
 	//Find the AT command & parameter
 	unsigned char AT[2];
-	unsigned char * parameter = NULL;
-	sscanf((char *)buffer, "%c%c:%s",&AT[0], &AT[1], parameter);
-	printf("AT Command: %c%c ",AT[0], AT[1]);
-
+	unsigned int parameter;
+	sscanf((char *)buffer, "%c%c:%02x",&AT[0], &AT[1],&parameter);
 	int para_len = 0;
-	if(parameter!=NULL){
-		para_len = strlen((const char *)parameter);
-		printf("%s",parameter);
+	if(parameter!= 0){
+		para_len=1;
 	}
-	printf("\n");
 
+
+	//New message: New key
+	msg * msg_elem = NULL;
+	if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
+	msg_key+=1;
 
 	//Generate the API frame for AT command request
 	unsigned char * API_frame=NULL;
-	API_frame = ATCMD_request(AT, parameter, para_len);
-	if(API_frame==NULL){
-		printf("error\n");
-		return;
-	}
-	else{
-		printf("\n");
-		int length = API_frame_length(API_frame);
-		for(int i=0; i<length; i++){
-			printf(":%02x:",API_frame[i]);
-		}
-		printf("\n");
-
-	}
-
+	API_frame = ATCMD_request(msg_key,\
+							AT, (unsigned char *)&parameter, para_len);
+	if(API_frame==NULL)return;
 
 	//Copy the API frame to the structure
-	//New message: New key
-	msg_key+=1;
-	msg * msg_elem = NULL;
-	if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
 	msg_elem->key = msg_key;
 	msg_elem->API_frame = API_frame;
 	msg_elem->length = API_frame_length(API_frame);
+	HASH_ADD_INT(msg_list, key, msg_elem);
 
 	return;
 }

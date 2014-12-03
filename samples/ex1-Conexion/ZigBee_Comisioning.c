@@ -110,13 +110,7 @@ int main(int argc, char **argv)
 		//---- We have standard input ----
 		else if (FD_ISSET(0, &rfds))
 		{
-			//---- Allocated memory
-			unsigned char *buffer=(unsigned char*)malloc(0x100);
-			//---- Read standard input
-			int n=read(0, buffer, 0x100);
 
-			//---- Free Memory
-			free(buffer);
 		}
 
 	}
@@ -131,7 +125,7 @@ handshake(zigbee* zb_elem, int serialFd){
 
 	//---- Generate the API Frame for Transmit request
 	unsigned char RFdata[5] = {'h','o','l','a','\0'};
-	unsigned char * API_frame= ZBTR_request(zb_elem->address, zb_elem->network, 0, 0, RFdata, 5);
+	unsigned char * API_frame= ZBTR_request(0x01,zb_elem->address, zb_elem->network, 0, 0, RFdata, 5);
 
 	//---- Send API frame
 	if(API_frame==NULL)return;
