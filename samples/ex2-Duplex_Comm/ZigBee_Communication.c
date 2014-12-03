@@ -124,11 +124,10 @@ int main(int argc, char **argv)
 			for(msg_elem=msg_list;\
 				msg_elem != NULL; \
 				msg_elem=(msg*)(msg_elem->hh.next)){
-
+//				if((msg_elem->length) != \
+//					write(serialFd,msg_elem->API_frame,msg_elem->length ))
+//				printf("Fail to send APIframe to serial\n");
 			}
-			if((msg_elem->length) != \
-					write(serialFd,msg_elem->API_frame,msg_elem->length ))
-				printf("Fail to send APIframe to serial\n");
 		}
 
 	}
@@ -247,16 +246,38 @@ send_this(unsigned char * buffer){
 void
 send_AT(unsigned char * buffer){
 
+	printf("Sending AT Command\n");
 	//Find the AT command & parameter
 	unsigned char AT[2];
 	unsigned char * parameter = NULL;
 	sscanf((char *)buffer, "%c%c:%s",&AT[0], &AT[1], parameter);
-	int para_len = strlen((const char *)parameter);
+	printf("AT Command: %c%c ",AT[0], AT[1]);
+
+	int para_len = 0;
+	if(parameter!=NULL){
+		para_len = strlen((const char *)parameter);
+		printf("%s",parameter);
+	}
+	printf("\n");
+
 
 	//Generate the API frame for AT command request
 	unsigned char * API_frame=NULL;
 	API_frame = ATCMD_request(AT, parameter, para_len);
-	if(API_frame==NULL)return;
+	if(API_frame==NULL){
+		printf("error\n");
+		return;
+	}
+	else{
+		printf("\n");
+		int length = API_frame_length(API_frame);
+		for(int i=0; i<length; i++){
+			printf(":%02x:",API_frame[i]);
+		}
+		printf("\n");
+
+	}
+
 
 	//Copy the API frame to the structure
 	//New message: New key

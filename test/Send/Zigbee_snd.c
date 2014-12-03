@@ -190,7 +190,7 @@ test_ATCMD_request(unsigned char* buf, int length){
 	printf("\n");
 
 	//---- Generate the API Frame for AT request
-	API_frame=ATCMD_request(AT, parameters,para_len);
+	API_frame=ATCMD_request(0x8,AT, parameters,para_len);
 	length=ATCMD_request_length(para_len);
 	printf("API Frame: ");
 	for(int i=0;i<length; i++)printf("%02x:",API_frame[i]);

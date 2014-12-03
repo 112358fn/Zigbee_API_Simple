@@ -60,7 +60,10 @@ ATCMD_request_length(int para_len){
 }
 
 unsigned char *
-ATCMD_request(unsigned char AT[2], unsigned char * parameters, int para_len){
+ATCMD_request(unsigned char frameID, \
+			unsigned char AT[2], \
+			unsigned char * parameters, \
+			int para_len){
 	//---- Set API Frame length
 	int frame_length= ATCMD_request_length(para_len);
 	//---- Allocate the necessary space
@@ -76,7 +79,7 @@ ATCMD_request(unsigned char AT[2], unsigned char * parameters, int para_len){
 	//.... Frame Type
 	API_frame[3] = ATCMD;
 	//.... Frame ID
-	API_frame[4] = FRAMEID;
+	API_frame[4] = frameID;
 	//.... AT Command
 	API_frame[5] = AT[0];
 	API_frame[6] = AT[1];

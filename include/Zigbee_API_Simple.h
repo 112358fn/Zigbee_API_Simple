@@ -135,8 +135,10 @@ API_frame_checksum(unsigned char * API_frame);
 int
 ATCMD_request_length(int para_len);
 unsigned char *
-ATCMD_request(unsigned char AT[2], unsigned char * parameters,int para_len); //Generate AT request
-
+ATCMD_request(unsigned char frameID, \
+			unsigned char AT[2], \
+			unsigned char * parameters, \
+			int para_len);
 //---- ZigBee Transmit Request Functions & MACROS
 #define ZBTR_data_length(para_len) 	(MIN_ZBTR_DATA)+(para_len) //Return Frame-specific Data length
 int
