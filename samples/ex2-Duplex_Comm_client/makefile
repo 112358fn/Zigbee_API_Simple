@@ -8,9 +8,9 @@ INCDIR=$(ROOT)/include
 SRCDIR=$(ROOT)/src
 
 SOURCES=$(SRCDIR)/Serial_Init.c \
-	$(SRCDIR)/Zigbee_API_Simple.c 
+		$(SRCDIR)/Zigbee_API_Simple.c 
 
-EXECUTABLE= ZigBee_Communication 
+EXECUTABLE= ZigBee_Communication_client
 
 
 CC=gcc

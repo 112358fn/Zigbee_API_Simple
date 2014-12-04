@@ -1,5 +1,5 @@
 /*
- *  Zigbee_Comunication.c
+ *  Zigbee_Comunication_client.c
  *
  *
  *  Created by Alvaro Rodrigo Alonso Bivou.
@@ -7,16 +7,15 @@
  *
  */
 
-#include "ZigBee_Communication.h"
+#include "ZigBee_Communication_client.h"
 
 
 /*
  * Hash Tables
  */
 msg * msg_list=NULL;
-zigbee_hash * zigbee_hash_table=NULL;
 //Keys
-int msg_key, zigbee_key;
+int msg_key;
 //---- Serial Port ----
 int serialFd=0;
 
@@ -152,24 +151,6 @@ show_msg_elem(msg * msg_elem){
 }
 
 void
-show_zgb_table(void){
-	printf("---- Node Identification Indicator ----\n");
-	zigbee_hash * zgb_elem;
-	for(zgb_elem=zigbee_hash_table; zgb_elem!=NULL; zgb_elem=(zigbee_hash*)(zgb_elem->hh.next)){
-		printf("* Zigbee %d\n", zgb_elem->key);
-		printf("|-->64bit Address:");
-		for(int i=0; i<8; i++)
-				printf(":%02x:",zgb_elem->zb->address[i]);
-		printf("\n");
-		printf("|-->16bit Address:");
-		printf(":%02x::%02x\n",zgb_elem->zb->network[0], zgb_elem->zb->network[1]);
-	}
-	printf("*********************************************************\n");
-
-	return;
-}
-
-void
 show_buffer(unsigned char * buf, int n){
 	printf("\n*********************************************************\n");
 	printf("Received ");
@@ -197,7 +178,6 @@ send_msg(void){
 void
 use_this(data_frame * data){
 
-	zigbee_hash * zb_elem;
 	//---- Switch CMD ID ----
 	switch(data->cmdID){
 	//.... AT Command Response
@@ -208,16 +188,6 @@ use_this(data_frame * data){
 		break;
 	//.... Zigbee Receive Packet
 	case ZBRECVPCK:ZBRCV_packet(data);
-		break;
-	//.... Node ID
-	case NODEID:
-		zb_elem = (zigbee_hash *)malloc(sizeof(zigbee_hash));
-		if ( zb_elem == NULL) return;
-		zigbee_key+=1;
-		zb_elem->key = zigbee_key;
-		zb_elem->zb = NODE_id_decode(data);
-		HASH_ADD_INT(zigbee_hash_table, key, zb_elem);
-		show_zgb_table();
 		break;
 	//.... Not implemented yet
 	default:printf("Default. Not Implemented Yet");
@@ -233,48 +203,35 @@ use_this(data_frame * data){
 void
 add_this_msg(unsigned char * buffer){
 
-	zigbee_hash * zgb_elem=NULL;
+
+	msg * msg_elem = NULL;
+	unsigned char * API_frame=NULL;
 	int n = strlen((char *)buffer);
 
 	switch(buffer[0]){
 		case 'T':
-			//If there is NO Zigbee connected
-			if(zigbee_hash_table==NULL)
-				printf("Not connected to any Zigbee yet\n");
+			printf("-->Transmission added to the list\n");
+			//Generated the message to coordinator Zigbee connected
+			//New message: New key
+			if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
+			msg_key+=1;
 
-			//If there are in fact some Zigbees connected
-			else{
-				printf("-->Transmission added to the list\n");
-				//Generated the message to every Zigbee connected
-				//This could be solve with a broadcast message
-				//but note that this is for educational purposes
+			//Generate the API Frame for Transmit request
+			unsigned char coor_addr[8]={0,0,0,0,0,0,0,0};
+			unsigned char network[2]={0xFF,0xFE};
+			API_frame=ZBTR_request(msg_key,\
+									coor_addr, \
+									network, \
+									0, 0, buffer+2, n);
+			if(API_frame==NULL)return;
 
-				for(zgb_elem=zigbee_hash_table; \
-				zgb_elem != NULL; \
-				zgb_elem=(zigbee_hash*)(zgb_elem->hh.next)){
-
-					//New message: New key
-					msg * msg_elem = NULL;
-					if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
-					msg_key+=1;
-
-					//Generate the API Frame for Transmit request
-					unsigned char * API_frame= \
-							ZBTR_request(msg_key,\
-										zgb_elem->zb->address, \
-										zgb_elem->zb->network, \
-										0, 0, buffer+2, n);
-					if(API_frame==NULL)return;
-
-					//Copy the API frame to the structure
-					msg_elem->key = msg_key;
-					msg_elem->API_frame = API_frame;
-					msg_elem->length = API_frame_length(API_frame);
-					HASH_ADD_INT(msg_list, key, msg_elem);
-				}
-			}
-
+			//Copy the API frame to the structure
+			msg_elem->key = msg_key;
+			msg_elem->API_frame = API_frame;
+			msg_elem->length = API_frame_length(API_frame);
+			HASH_ADD_INT(msg_list, key, msg_elem);
 			break;
+
 		case 'A':
 			printf("-->AT Command added to the list\n");
 
@@ -288,12 +245,10 @@ add_this_msg(unsigned char * buffer){
 			}
 
 			//New message: New key
-			msg * msg_elem = NULL;
 			if ((msg_elem = (msg*)malloc(sizeof(msg))) == NULL) return;
 			msg_key+=1;
 
 			//Generate the API frame for AT command request
-			unsigned char * API_frame=NULL;
 			API_frame = ATCMD_request(msg_key,\
 									AT, (unsigned char *)&parameter, para_len);
 			if(API_frame==NULL)return;
@@ -310,7 +265,6 @@ add_this_msg(unsigned char * buffer){
 
 	return;
 }
-
 
 void
 AT_response(data_frame * data){

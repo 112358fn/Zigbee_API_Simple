@@ -152,7 +152,7 @@ void send_ND(int serialFd){
 	//---- API Frame of AT CB 1
 	unsigned char AT[2]={'C','B'};
 	unsigned char parameter= 1;
-	API_frame = ATCMD_request(0x01,AT, &parameter,1);
+	API_frame = ATCMD_request(1,AT, &parameter,1);
 
 
 	if(API_frame==NULL)return;

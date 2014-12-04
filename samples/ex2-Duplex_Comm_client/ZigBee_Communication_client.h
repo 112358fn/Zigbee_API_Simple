@@ -40,8 +40,6 @@ welcome_message(char * dev);
 void
 show_msg_elem(msg * msg_elem);
 void
-show_zgb_table(void);
-void
 show_buffer(unsigned char * buf, int n);
 void
 send_msg(void);

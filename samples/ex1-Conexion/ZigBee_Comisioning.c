@@ -51,68 +51,52 @@ int main(int argc, char **argv)
     printf("Will wait for ND message and send a response:\n");
 
 
+	//---- Allocated memory
+	unsigned char buf[50];
+
+
 	/************************
 	 * Infinite Loop:
 	 * SELECT-System Call	*
 	 ************************/
-	fd_set rfds;
 	for(;;)
 	{
-		//---- wait for incoming informations from: ----
-		FD_ZERO(&rfds);
-		//---- standard input ----
-		FD_SET(0,&rfds);
-		//---- serial input ----
-		FD_SET(serialFd,&rfds);
-		int max_fd = (0 > serialFd ? 0 : serialFd) + 1;
-		//---- Do the select ----
-		if(select(max_fd, &rfds, NULL, NULL, NULL)==-1)
-		{perror("select");exit(1);}
-
-		//---- We have Serial input ----
-		if (FD_ISSET(serialFd, &rfds))
-		{
-			//---- Allocated memory
-			unsigned char *buf=(unsigned char*)malloc(0x100);
-			//---- Read serial
-			int n=read(serialFd, buf, 0x100);
-			if(n<0){continue;}//Nothing read
+		//---- Read serial
+		int n=read(serialFd, buf, 50);
+		if(n<0){
+			printf("Nada Leido\n");
+			continue;
+		}//Nothing read
+		else{
+			printf("really?%s",buf);
 			//---- Decode API frame received
 			api = API_frame_decode(buf,n);
 			//---- Switch
 			switch(api->data->cmdID){
-				case NODEID:
-					zb_elem = NODE_id_decode(api->data);
-					handshake(zb_elem, serialFd);
-					break;
-				case ZBTR_STATUS:
-					switch(get_ZBTR_status_deliveryST(api->data)){
-					    case SUCCESS:
-					    	printf("Success\n");
-							free(zb_elem);
-							break;
-					    default:
-					    	printf("Delivery Error.Retrying\n");
-							handshake(zb_elem, serialFd);
-							break;
-					}
+			case NODEID:
+				zb_elem = NODE_id_decode(api->data);
+				handshake(zb_elem, serialFd);
+				break;
+			case ZBTR_STATUS:
+				switch(get_ZBTR_status_deliveryST(api->data)){
+				case SUCCESS:
+					printf("Success\n");
+					free(zb_elem);
 					break;
 				default:
+					printf("Delivery Error.Retrying\n");
+					handshake(zb_elem, serialFd);
 					break;
+				}
+				break;
+			default:
+				break;
 			}
 			//--- Free memory
 			free(api->data->cmdData);
 			free(api->data);
 			free(api);
-			free(buf);
 		}
-
-		//---- We have standard input ----
-		else if (FD_ISSET(0, &rfds))
-		{
-
-		}
-
 	}
 	//---- close serial socket ----
 	close(serialFd);
