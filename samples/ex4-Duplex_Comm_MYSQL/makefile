@@ -8,18 +8,19 @@ INCDIR=$(ROOT)/include
 SRCDIR=$(ROOT)/src
 
 SOURCES=$(SRCDIR)/Serial_Init.c \
-		$(SRCDIR)/Zigbee_API_Simple.c 
+	$(SRCDIR)/Zigbee_API_Simple.c 
 
-EXECUTABLE= Zigbee_snd
+EXECUTABLE= ZigBee_Communication 
 
 
 CC=gcc
 CFLAGS=-std=c99 -U__STRICT_ANSI__ \
        -D_REENTRANT \
        -W -Wall -pedantic -O3 \
-       -I$(INCDIR)
+       -I$(INCDIR) \
+       $(shell mysql_config --cflags)
        
-LDFLAGS=-lpthread -lm
+LDFLAGS=-lpthread -lm $(shell mysql_config --libs)
 
 all: clean ${EXECUTABLE} 
 

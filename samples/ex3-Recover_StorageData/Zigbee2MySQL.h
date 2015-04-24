@@ -6,14 +6,18 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+
 #include "Serial_Init.h"
 #include "Zigbee_API_Simple.h"
-
+#include "MySql.h"
 
 #if !defined(_ZIGBEE_COMISIONING_H)
 #define _ZIGBEE_COMISIONING_H
 //---- Functions
-void send_ND(int serialFd);
 
+void
+handshake(zigbee* zb_elem, int serialFd);
 
+void
+make_it_useful(data_frame * data);
 #endif

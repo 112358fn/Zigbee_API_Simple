@@ -1,10 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <sys/select.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <dlfcn.h>
+
+
+
+#include <my_global.h>
+#include <mysql.h>
 
 #include "Serial_Init.h"
 #include "Zigbee_API_Simple.h"
@@ -13,6 +26,9 @@
 
 #if !defined(_ZIGBEE_COMMUNICATION_H)
 #define _ZIGBEE_COMMUNICATION_H
+
+#define PORT_NUM 5678
+#define PORT_UDP 9876
 
 /*
  * Structures
@@ -48,7 +64,7 @@ send_msg(void);
 void
 use_this(data_frame * data);
 void
-add_this_msg(unsigned char * buffer);
+add_this_msg(unsigned char * buffer, int zb_id);
 
 
 
@@ -58,5 +74,11 @@ void
 ZBTR_status(data_frame * data);
 void
 ZBRCV_packet(data_frame * data);
+
+void *
+dialogThread(void *arg);
+
+void
+finish_with_error(MYSQL *con);
 
 #endif
